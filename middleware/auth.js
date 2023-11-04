@@ -3,9 +3,11 @@ const jsonwebtoken = require('jsonwebtoken');
 module.exports = (req, res, next) => {
     const authHeader = req.get('Authorization');
     if(!authHeader){
-        const error = new Error('Not authenticated');
-        error.statusCode = 401;
-        throw error;
+        req.isAuth = false;
+        return next();
+        // const error = new Error('Not authenticated');
+        // error.statusCode = 401;
+        // throw error;
     }
     const token = authHeader.split(' ')[1];
     let decodedToken;
@@ -15,17 +17,18 @@ module.exports = (req, res, next) => {
         throw error;
     }
     try {
-        decodedToken = jsonwebtoken.verify(token, 'somesupersecretsecret');
+        decodedToken = jsonwebtoken.verify(token, 'someSuperSecretSecret');
 
     } catch (e) {
-        e.statusCode = 500;
-        throw e;
+        req.isAuth = false;
+        return next();
     }
     if (!decodedToken) {
-        const error = new Error('Not authenticated');
-        error.statusCode = 401;
-        throw error;
+        req.isAuth = false;
+        return next();
     }
     req.userId = decodedToken.userId;
+    console.log('req.userId', req.userId)
+    req.isAuth = true;
     next();
 }
